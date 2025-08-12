@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Alice Johnson",
+    "role": "Backend Developer",
+    "skills": ["Python", "Django", "REST API", "MongoDB"],
+    "task_allocated": false,
+    "past_performance_score": 8.7,
+    "bandwidth": 0.8
+  },
+  {
+    "name": "Bob Smith",
+    "role": "Frontend Developer",
+    "skills": ["React.js", "JavaScript", "CSS", "HTML"],
+    "task_allocated": false,
+    "past_performance_score": 8.2,
+    "bandwidth": 0.7
+  },
+  {
+    "name": "Charlie Lee",
+    "role": "Fullstack Developer",
+    "skills": ["Python", "Django", "React.js", "MongoDB"],
+    "task_allocated": false,
+    "past_performance_score": 9.0,
+    "bandwidth": 0.9
+  },
+  {
+    "name": "Diana Patel",
+    "role": "UI/UX Designer",
+    "skills": ["UI Design", "Figma", "CSS", "HTML"],
+    "task_allocated": false,
+    "past_performance_score": 8.5,
+    "bandwidth": 0.6
+  },
+  {
+    "name": "Ethan Brown",
+    "role": "Tester",
+    "skills": ["Manual Testing", "Selenium", "API Testing", "Postman"],
+    "task_allocated": false,
+    "past_performance_score": 8.3,
+    "bandwidth": 0.75
+  },
+  {
+    "name": "Fiona Wilson",
+    "role": "Code Reviewer",
+    "skills": ["Python", "Django", "Code Review", "Best Practices"],
+    "task_allocated": false,
+    "past_performance_score": 9.1,
+    "bandwidth": 0.85
+  }
+]

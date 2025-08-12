@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+db.sqlite3  # If using temp SQL
+venv/
+.env  # For secrets like API keys
+backend/.env
+backend/credentials.json
+backend/token.json
+backend/token.pickle
