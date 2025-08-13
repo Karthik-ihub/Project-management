@@ -6,7 +6,7 @@ import { User, CheckCircle, AlertCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 interface Developer {
-  _id: string;
+  Dev_id: string; // Changed from _id to Dev_id
   name: string;
   role: string;
   skills: string[];
@@ -39,11 +39,42 @@ const ManagerNewProject: React.FC = () => {
         });
 
         const data = await response.json();
+        console.log('API Response:', JSON.stringify(data, null, 2)); // Debug API response
         if (!response.ok) {
           throw new Error(data.error || 'Failed to fetch developers');
         }
-        setDevelopers(data.developers);
+
+        // Map API response to Developer interface, using Dev_id
+        const developerMap = new Map();
+        data.developers.forEach((dev: any) => {
+          const id = dev.Dev_id; // Use Dev_id directly
+          if (!developerMap.has(id)) {
+            developerMap.set(id, {
+              Dev_id: id,
+              name: dev.name,
+              role: dev.role,
+              skills: dev.skills,
+              bandwidth: dev.bandwidth,
+              work_batch: dev.work_batch,
+            });
+          } else {
+            console.warn(`Duplicate Dev_id found: ${id}, keeping first instance`);
+          }
+        });
+        const developers = Array.from(developerMap.values());
+
+        // Validate unique Dev_id values
+        const developerIds = developers.map((dev: Developer) => dev.Dev_id);
+        const uniqueIds = new Set(developerIds);
+        if (uniqueIds.size !== developerIds.length) {
+          console.error('Duplicate developer Dev_id detected:', developerIds);
+          setError('Duplicate developer Dev_id detected. Please contact support.');
+          return;
+        }
+
+        setDevelopers(developers);
       } catch (err: any) {
+        console.error('Fetch error:', err);
         setError(err.message || 'Failed to fetch developers');
       } finally {
         setIsLoading(false);
@@ -54,11 +85,13 @@ const ManagerNewProject: React.FC = () => {
   }, []);
 
   const toggleDeveloperSelection = (developerId: string) => {
-    setSelectedDevelopers((prev) =>
-      prev.includes(developerId)
+    setSelectedDevelopers((prev) => {
+      const newSelection = prev.includes(developerId)
         ? prev.filter((id) => id !== developerId)
-        : [...prev, developerId]
-    );
+        : [...prev, developerId];
+      console.log('Selected developers:', newSelection); // Debug selection
+      return newSelection;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,7 +108,7 @@ const ManagerNewProject: React.FC = () => {
       const team_metadata = {
         team_name: teamName,
         members: developers
-          .filter((dev) => selectedDevelopers.includes(dev._id))
+          .filter((dev) => selectedDevelopers.includes(dev.Dev_id)) // Use Dev_id
           .map((dev) => ({ name: dev.name, role: dev.role })),
         project_goal: projectGoal,
       };
@@ -93,9 +126,9 @@ const ManagerNewProject: React.FC = () => {
       if (!response.ok) {
         throw new Error(data.error || 'Failed to submit idea');
       }
-      // Navigate to analysis page with response data
       navigate('/manager/analysis', { state: { analysis: data.analysis, project_id } });
     } catch (err: any) {
+      console.error('Submit error:', err);
       setError(err.message || 'Failed to submit idea');
     } finally {
       setIsLoading(false);
@@ -185,38 +218,48 @@ const ManagerNewProject: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoading && <p className="text-gray-600">Loading developers...</p>}
             {developers.length === 0 && !isLoading && <p className="text-gray-600">No developers available.</p>}
-            {developers.map((developer) => (
-              <div
-                key={developer._id}
-                className="bg-white rounded-lg shadow-md border border-gray-100 p-6 flex flex-col"
-              >
-                <div className="flex items-center mb-4">
-                  <User className="w-8 h-8 text-blue-600 mr-3" />
-                  <h3 className="text-lg font-semibold text-gray-900">{developer.name}</h3>
-                </div>
-                <p className="text-sm text-gray-600 mb-2"><strong>Role:</strong> {developer.role}</p>
-                <p className="text-sm text-gray-600 mb-2">
-                  <strong>Skills:</strong> {developer.skills.join(', ')}
-                </p>
-                <p className="text-sm text-gray-600 mb-2">
-                  <strong>Bandwidth:</strong> {developer.bandwidth * 100}%
-                </p>
-                <p className="text-sm text-gray-600 mb-4">
-                  <strong>Work Hours:</strong> {developer.work_batch}
-                </p>
-                <button
-                  onClick={() => toggleDeveloperSelection(developer._id)}
-                  className={`w-full py-2 px-4 rounded-lg text-sm font-semibold transition-colors duration-200 ${
-                    selectedDevelopers.includes(developer._id)
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                  disabled={isLoading}
+            {developers.map((developer) => {
+              console.log('Rendering developer:', developer.Dev_id, developer.name); // Debug rendering
+              return (
+                <div
+                  key={developer.Dev_id} // Use Dev_id for key
+                  className="bg-white rounded-lg shadow-md border border-gray-100 p-6 flex flex-col"
                 >
-                  {selectedDevelopers.includes(developer._id) ? 'Selected' : 'Select'}
-                </button>
-              </div>
-            ))}
+                  <div className="flex items-center mb-4">
+                    <User className="w-8 h-8 text-blue-600 mr-3" />
+                    <h3 className="text-lg font-semibold text-gray-900">{developer.name}</h3>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2"><strong>Role:</strong> {developer.role}</p>
+                  <p className="text-sm text-gray-600 mb-2">
+                    <strong>Skills:</strong> {developer.skills.join(', ')}
+                  </p>
+                  <p className="text-sm text-gray-600 mb-2">
+                    <strong>Bandwidth:</strong> {developer.bandwidth * 100}%
+                  </p>
+                  <p className="text-sm text-gray-600 mb-4">
+                    <strong>Work Hours:</strong> {developer.work_batch}
+                  </p>
+                  <button
+                    onClick={() => toggleDeveloperSelection(developer.Dev_id)} // Use Dev_id
+                    className={`w-full py-2 px-4 rounded-lg text-sm font-semibold transition-colors duration-200 ${
+                      selectedDevelopers.includes(developer.Dev_id)
+                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                    disabled={isLoading}
+                  >
+                    {selectedDevelopers.includes(developer.Dev_id) ? (
+                      <>
+                        <CheckCircle className="w-4 h-4 inline-block mr-1" />
+                        Selected
+                      </>
+                    ) : (
+                      'Select'
+                    )}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
