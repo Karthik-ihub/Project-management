@@ -37,7 +37,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',  # React default port
+    'http://localhost:5173',  # Updated to match frontend port
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -71,6 +71,9 @@ DATABASES = {
 # MongoDB settings
 MONGO_URI = os.getenv('MONGO_URI')
 MONGO_DB_NAME = 'agentic_db'
+
+# JWT settings
+JWT_ALGORITHM = 'HS256'
 
 # Static and media files
 STATIC_URL = '/static/'

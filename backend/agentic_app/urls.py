@@ -6,4 +6,10 @@ urlpatterns = [
     path('epics/', views.generate_epics_endpoint, name='generate_epics'),
     path("team-matcher/", views.team_matcher_endpoint, name="team_matcher_endpoint"),
     path("developers/", views.get_developers_endpoint, name="get_developers_endpoint"),
+    path("developer/signup/", views.developer_signup, name="developer_signup"),
+    path("developer/login/", views.developer_login, name="developer_login"),
+    path("manager/signup/", views.manager_signup, name="manager_signup"),
+    path("manager/login/", views.manager_login, name="manager_login"),
+    path("managers/", views.get_managers_endpoint, name="get_managers_endpoint"),
+    path("save-analysis/", views.save_analysis, name="save_analysis"),
 ]
