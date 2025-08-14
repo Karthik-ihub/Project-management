@@ -36,14 +36,18 @@ def update_developer_allocation(developer_names):
 def match_team_and_allocate(project_id):
     """Allocate stories to developers based on skills, bandwidth, and performance."""
     try:
-        # 1. Get user stories using the new function
-        story_data = get_user_stories(project_id)
+        # 1. Get user stories from the new collection
+        client = get_mongo_client()
+        db = client[settings.MONGO_DB_NAME]
+        collection = db['project_epics_stories']
+        epics_stories_doc = collection.find_one({"project_id": project_id})
+        client.close()
         
-        # The original check for 'output' is still valid
-        if "output" not in story_data:
-            raise ValueError(f"Malformed story data for project_id {project_id}")
-
-        stories = story_data["output"].get("user_stories", [])
+        if not epics_stories_doc:
+            raise ValueError(f"No epics and stories found for project_id {project_id}")
+        
+        epics_stories = epics_stories_doc.get("epics_stories", {})
+        stories = epics_stories.get("user_stories", [])
         if not stories:
             raise ValueError("No user stories found for allocation")
 

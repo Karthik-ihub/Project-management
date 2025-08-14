@@ -12,4 +12,5 @@ urlpatterns = [
     path("manager/login/", views.manager_login, name="manager_login"),
     path("managers/", views.get_managers_endpoint, name="get_managers_endpoint"),
     path("save-analysis/", views.save_analysis, name="save_analysis"),
+    path("save-epics-features/", views.save_epics_stories, name="save_epics_features"),
 ]

@@ -32,7 +32,7 @@ def get_project_data(project_id):
     try:
         client = get_mongo_client()
         db = client[settings.MONGO_DB_NAME]
-        collection = db['agent_outputs']
+        collection = db['project_analysis']  # Updated collection name
         data = collection.find_one({"project_id": project_id})
         client.close()
         return data
@@ -68,22 +68,17 @@ def get_all_developers():
     except Exception as e:
         raise ValueError(f"Failed to retrieve developers: {e}")
 def get_user_stories(project_id):
-    """Retrieve user stories for a specific project from MongoDB."""
-    try:
-        client = get_mongo_client()
-        db = client[settings.MONGO_DB_NAME]
-        collection = db['agent_outputs']
-        
-        # Query for the document from 'epic_agent' that contains the user stories
-        query = {"project_id": project_id, "agent_name": "epic_agent"}
-        data = collection.find_one(query)
-        
-        client.close()
-        
-        if not data:
-            raise ValueError(f"No user stories found for project_id: {project_id}")
-            
-        return data
-        
-    except Exception as e:
-        raise ValueError(f"Failed to retrieve user stories: {e}")
+    client = get_mongo_client()
+    db = client[settings.MONGO_DB_NAME]
+    collection = db['project_epics_stories']
+    doc = collection.find_one({"project_id": project_id})
+    client.close()
+    if not doc or "epics_stories" not in doc:
+        raise ValueError(f"No epics_stories found for project_id {project_id}")
+    # Adapt to the expected format
+    return {
+        "output": {
+            "user_stories": doc["epics_stories"].get("user_stories", [])
+        }
+    }
+

@@ -92,12 +92,14 @@ const ManagerAnalysis: React.FC = () => {
     }
   };
 
-  const handleSaveAnalysis = async () => {
+  const handleGoForEpics = async () => {
     setIsLoading(true);
     setError('');
     setSuccess('');
+
+    // First, save the analysis
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/save-analysis/', {
+      const saveResponse = await fetch('http://127.0.0.1:8000/api/save-analysis/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -106,14 +108,39 @@ const ManagerAnalysis: React.FC = () => {
         body: JSON.stringify({ project_id, analysis }),
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to save analysis');
+      const saveData = await saveResponse.json();
+      if (!saveResponse.ok) {
+        throw new Error(saveData.error || 'Failed to save analysis');
       }
-      setSuccess('Analysis saved successfully!');
-      setTimeout(() => navigate('/manager/home'), 2000);
+      setSuccess('Analysis saved successfully! Generating epics...');
     } catch (err: any) {
       setError(err.message || 'Failed to save analysis');
+      setIsLoading(false);
+      return;
+    }
+
+    // Then, generate epics if save was successful
+    try {
+      const epicsResponse = await fetch('http://127.0.0.1:8000/api/epics/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ project_id }),
+      });
+
+      const epicsData = await epicsResponse.json();
+      if (!epicsResponse.ok) {
+        throw new Error(epicsData.error || 'Failed to generate epics');
+      }
+      console.log('Epics Data:', epicsData); // Debugging log
+      setSuccess('Epics generated successfully!');
+      
+      // Navigate to EpicsDisplay with correct state key
+      setTimeout(() => navigate('/manager/epics', { state: { epics_stories: epicsData.epics_stories, project_id } }), 2000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to generate epics');
     } finally {
       setIsLoading(false);
     }
@@ -354,17 +381,17 @@ const ManagerAnalysis: React.FC = () => {
           </section>
 
           <button
-            onClick={handleSaveAnalysis}
+            onClick={handleGoForEpics}
             disabled={isLoading}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
           >
             {isLoading ? (
               <>
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Saving...
+                Processing...
               </>
             ) : (
-              'Save Analysis'
+              'Go for epics and features'
             )}
           </button>
         </div>
@@ -372,5 +399,4 @@ const ManagerAnalysis: React.FC = () => {
     </div>
   );
 };
-
 export default ManagerAnalysis;

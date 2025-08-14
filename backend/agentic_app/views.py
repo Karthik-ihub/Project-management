@@ -8,6 +8,7 @@ import jwt
 import datetime
 from agentic_app.agents.idea_agent import process_idea  
 from agentic_app.agents.epic_agent import generate_epics_and_stories
+from agentic_app.agents.team_matcher_agent import match_team_and_allocate
 from agentic_app.utils.db import get_mongo_client, get_project_data, get_all_developers
 from pymongo import MongoClient
 from bson import ObjectId
@@ -140,11 +141,11 @@ def generate_epics_endpoint(request):
         if not project_id:
             return JsonResponse({"error": "Missing project_id"}, status=400)
         
-        agent1_data = get_project_data(project_id)
-        if not agent1_data or 'output' not in agent1_data:
-            return JsonResponse({"error": "No Agent 1 output found for project_id"}, status=404)
+        project_data = get_project_data(project_id)
+        if not project_data or 'analysis' not in project_data:
+            return JsonResponse({"error": "No analysis data found for project_id"}, status=404)
         
-        features = agent1_data['output'].get('features', [])
+        features = project_data['analysis'].get('features', [])
         epics_stories = generate_epics_and_stories(features, project_id)
         return JsonResponse({"status": "success", "epics_stories": epics_stories}, status=200)
     except json.JSONDecodeError:
@@ -152,24 +153,48 @@ def generate_epics_endpoint(request):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
+def serialize_allocations(allocations):
+    """Convert datetime fields in allocations to strings."""
+    serialized = []
+    for allocation in allocations:
+        serialized_allocation = {}
+        for key, value in allocation.items():
+            if isinstance(value, datetime):
+                serialized_allocation[key] = value.isoformat()  # Convert datetime to ISO 8601 string
+            else:
+                serialized_allocation[key] = value
+        serialized.append(serialized_allocation)
+    return serialized
+
 @csrf_exempt
-@jwt_required
 def team_matcher_endpoint(request):
     """Run Agent 3: Match team members to stories."""
     try:
-        project_id = request.GET.get("project_id")
+        if request.method != 'POST':
+            return JsonResponse({"error": "Method not allowed"}, status=405)
+
+        # Parse the JSON body
+        try:
+            data = json.loads(request.body)
+            project_id = data.get("project_id")
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON in request body"}, status=400)
+
         if not project_id:
             return JsonResponse({"error": "Missing project_id"}, status=400)
         
+        # Call the team matching function
         allocations = match_team_and_allocate(project_id)
+        
+        # Serialize allocations to handle datetime objects
+        serialized_allocations = serialize_allocations(allocations)
         
         return JsonResponse({
             "project_id": project_id,
-            "allocations": allocations
+            "allocations": serialized_allocations
         }, status=200)
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
-
+        return JsonResponse({"error": f"Failed in Team Matcher Agent: {str(e)}"}, status=500)
 @csrf_exempt
 @jwt_required
 def get_developers_endpoint(request):
@@ -524,3 +549,29 @@ def update_manager_profile(request):
         return JsonResponse({'error': 'Invalid user ID'}, status=400)
     except Exception as e:
         return JsonResponse({'error': f"Unexpected error: {str(e)}"}, status=500)
+
+@csrf_exempt
+@require_POST
+def save_epics_stories(request):
+    try:
+        data = json.loads(request.body)
+        project_id = data.get('project_id')
+        epics_stories = data.get('epics_stories')
+        
+        if not project_id or not epics_stories:
+            return JsonResponse({"error": "Missing project_id or epics_stories"}, status=400)
+        
+        client = get_mongo_client()
+        db = client[settings.MONGO_DB_NAME]
+        collection = db['project_epics_stories']  # New collection for epics and stories
+        collection.update_one(
+            {"project_id": project_id},
+            {"$set": {"epics_stories": epics_stories, "updated_at": datetime.datetime.utcnow()}},
+            upsert=True
+        )
+        client.close()
+        return JsonResponse({"status": "success"}, status=200)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON format"}, status=400)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

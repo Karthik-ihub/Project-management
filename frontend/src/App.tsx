@@ -8,6 +8,7 @@ import DeveloperSignup from './pages/DeveloperSignup';
 import ManagerHomePage from './pages/ManagerHomePage';
 import ManagerNewProject from './pages/ManagerNewProject';
 import ManagerAnalysis from './pages/ManagerAnalysis';
+import EpicsDisplay from "./pages/EpicsDisplay";
 import ProtectedRoute from './components/ProtectedRoute';
 
 const App: React.FC = () => {
@@ -44,6 +45,14 @@ const App: React.FC = () => {
         element={
           <ProtectedRoute userType="manager">
             <ManagerAnalysis />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/manager/epics"
+        element={
+          <ProtectedRoute userType="manager">
+            <EpicsDisplay />
           </ProtectedRoute>
         }
       />
